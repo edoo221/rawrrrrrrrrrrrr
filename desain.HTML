@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pohon Cinta untuk Clove</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffe6ea;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* KANVAS UNTUK POHON */
+        #treeCanvas {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* TOMBOL AWAL (BENIH HATI) */
+        #startScreen {
+            position: absolute;
+            z-index: 10;
+            text-align: center;
+            transition: all 1.5s ease-in-out;
+        }
+
+        .heart-btn {
+            font-size: 50px;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+            user-select: none;
+        }
+
+        .heart-btn p {
+            font-size: 18px;
+            color: #ff4d6d;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .drop {
+            transform: translateY(40vh) scale(0.2);
+            opacity: 0;
+        }
+
+        /* AREA TEKS & WAKTU */
+        #uiContainer {
+            position: absolute;
+            top: 15%;
+            left: 5%;
+            width: 350px;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 2s ease-in;
+        }
+
+        #typewriterText {
+            font-size: 20px;
+            color: #d6336c;
+            min-height: 100px;
+            line-height: 1.5;
+            text-shadow: 1px 1px 3px rgba(255,255,255,0.8);
+        }
+
+        #timeCounter {
+            margin-top: 20px;
+            font-size: 15px;
+            color: #862e9c;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 15px;
+            border-radius: 15px;
+            border-left: 5px solid #ff87ab;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .time-val {
+            font-weight: bold;
+            color: #d6336c;
+            font-size: 17px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <div class="heart-btn" onclick="startAnimation()">
+            ❤️
+            <p>Klik aku, iqiss</p>
+        </div>
+    </div>
+
+    <div id="uiContainer">
+        <div id="typewriterText"></div>
+        <div id="timeCounter" style="display: none;">
+            Perasaanku padamu telah tumbuh selama:<br>
+            <span class="time-val" id="d">0</span> hari 
+            <span class="time-val" id="h">0</span> jam 
+            <span class="time-val" id="m">0</span> menit 
+            <span class="time-val" id="s">0</span> detik
+        </div>
+    </div>
+
+    <canvas id="treeCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("treeCanvas");
+    const ctx = canvas.getContext("2d");
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let branches = [];
+    let animationId;
+
+    function startAnimation() {
+        const startScreen = document.getElementById("startScreen");
+        startScreen.classList.add("drop");
+
+        setTimeout(() => {
+            startScreen.style.display = "none";
+            growTree(); 
+            showTextAndTimer(); 
+        }, 1500);
+    }
+
+    function growTree() {
+        // Posisikan pohon di kanan bawah
+        let startX = canvas.width * 0.7; 
+        let startY = canvas.height;
+        
+        // Root dahan
+        branches.push(new Branch(startX, startY, -90, 140, 14));
+        animateTree();
+    }
+
+    class Branch {
+        constructor(x, y, angle, length, width) {
+            this.x = x;
+            this.y = y;
+            this.angle = angle;
+            this.length = length;
+            this.width = width;
+            this.currentLength = 0; 
+            this.grown = false;
+            this.leafScale = 0; 
+
+            const colors = ['#ff4d6d', '#ff758f', '#ff8fa3', '#ffb3c1', '#c9184a'];
+            this.leafColor = colors[Math.floor(Math.random() * colors.length)];
+            this.leafColor2 = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        draw() {
+            let endX = this.x + this.currentLength * Math.cos(this.angle * Math.PI / 180);
+            let endY = this.y + this.currentLength * Math.sin(this.angle * Math.PI / 180);
+
+            if (this.currentLength < this.length) {
+                this.currentLength += 2.5; 
+            } else {
+                if (!this.grown) {
+                    this.grown = true;
+                    if (this.width > 1.5) {
+                        let angle1 = this.angle + 15 + Math.random() * 10;
+                        let angle2 = this.angle - 15 - Math.random() * 10;
+                        let newLength = this.length * (0.7 + Math.random() * 0.1);
+
+                        branches.push(new Branch(endX, endY, angle1, newLength, this.width * 0.7));
+                        branches.push(new Branch(endX, endY, angle2, newLength, this.width * 0.7));
+                    }
+                }
+
+                // LOGIKA DUA DAUN (SEPASANG) DI SETIAP UJUNG TANGKAI
+                if (this.width <= 1.5) {
+                    if (this.leafScale < 1) {
+                        this.leafScale += 0.05;
+                    }
+                    
+                    // Daun Kiri
+                    ctx.save();
+                    ctx.translate(endX, endY);
+                    ctx.rotate(-0.4); 
+                    drawHeartLeaf(0, 0, 18 * this.leafScale, this.leafColor);
+                    ctx.restore();
+
+                    // Daun Kanan
+                    ctx.save();
+                    ctx.translate(endX, endY);
+                    ctx.rotate(0.4); 
+                    drawHeartLeaf(0, 0, 18 * this.leafScale, this.leafColor2);
+                    ctx.restore();
+                }
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = "#5c4033"; 
+            ctx.lineWidth = this.width;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+    }
+
+    function drawHeartLeaf(x, y, size, color) {
+        ctx.save();
+        // Menggeser sedikit ke atas agar pangkal hati pas di ujung tangkai
+        ctx.translate(x, y - size / 2); 
+        
+        ctx.beginPath();
+        let topCurveHeight = size * 0.3;
+        ctx.moveTo(0, topCurveHeight);
+        ctx.bezierCurveTo(0, 0, -size / 2, 0, -size / 2, topCurveHeight);
+        ctx.bezierCurveTo(-size / 2, (size + topCurveHeight) / 2, 0, (size + topCurveHeight) / 2, 0, size);
+        ctx.bezierCurveTo(0, (size + topCurveHeight) / 2, size / 2, (size + topCurveHeight) / 2, size / 2, topCurveHeight);
+        ctx.bezierCurveTo(size / 2, 0, 0, 0, 0, topCurveHeight);
+        ctx.closePath();
+        
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function animateTree() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < branches.length; i++) {
+            branches[i].draw();
+        }
+        animationId = requestAnimationFrame(animateTree);
+    }
+
+    function showTextAndTimer() {
+        const uiContainer = document.getElementById("uiContainer");
+        uiContainer.style.opacity = 1;
+
+        const textToType = "Untuk clove kuu...\n\nJika aku bisa memilih satu tempat yang paling aman dan nyaman, maka aku lebih milih berada disisi mu bagaimanapun kondisi aku.\n\nAku harap semesta tahu seberapa besar kerinduanku ini.\n\nSetiap detik yang aku habiskan bersamamu adalah momen berharga yang selalu ingin aku ulangi. Kamu adalah mimpi yang menjadi kenyataan, dan aku bersyukur setiap hari untuk itu.";
+        const textElement = document.getElementById("typewriterText");
+        let i = 0;
+
+        function typeWriter() {
+            if (i < textToType.length) {
+                if(textToType.charAt(i) === '\n') {
+                    textElement.innerHTML += '<br>';
+                } else {
+                    textElement.innerHTML += textToType.charAt(i);
+                }
+                i++;
+                setTimeout(typeWriter, 50);
+            } else {
+                document.getElementById("timeCounter").style.display = "block";
+                startTimer();
+            }
+        }
+        typeWriter();
+    }
+
+    function startTimer() {
+        // Tanggal mulai (Sesuaikan jika perlu)
+        const startDate = new Date("2025-0-13T00:00:00").getTime();
+
+        setInterval(() => {
+            const now = new Date().getTime();
+            const distance = now - startDate;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("d").innerHTML = days;
+            document.getElementById("h").innerHTML = hours;
+            document.getElementById("m").innerHTML = minutes;
+            document.getElementById("s").innerHTML = seconds;
+        }, 1000); 
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+</script>
+</body>
+</html>

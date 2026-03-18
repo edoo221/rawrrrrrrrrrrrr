@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>about u</title>
+
+<style>
+    /* STYLE DASAR */
+    body {
+        margin: 0;
+        height: 100vh;
+        background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Comic Sans MS", cursive;
+        transition: background 0.5s ease;
+    }
+
+    .container {
+        text-align: center;
+        color: white;
+        z-index: 2;
+    }
+
+    h1 { font-size: 50px; }
+
+    p {
+        font-size: 24px;
+        margin-top: 20px;
+        max-width: 600px;
+        min-height: 70px;
+    }
+
+    button {
+        margin-top: 30px;
+        padding: 12px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 20px;
+        background: white;
+        color: #ff4d6d;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #ffe5ec;
+    }
+
+    /* HEART SVG (Animasi Love Putih Besar) */
+    .love-draw {
+        width: 340px;
+        height: 340px;
+        margin: auto;
+        margin-bottom: 20px;
+    }
+
+    .love-draw svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
+
+    #heartPath {
+        stroke: white;
+        stroke-width: 6;
+        fill: transparent;
+        stroke-dasharray: 1600;
+        stroke-dashoffset: 1600;
+        animation: drawHeart 3s ease forwards, fillHeart 1s ease forwards 3s, beat 1.5s infinite 4s;
+    }
+
+    @keyframes drawHeart { to { stroke-dashoffset: 0; } }
+    @keyframes fillHeart { to { fill: white; } }
+    @keyframes beat {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+    }
+
+    /* LOVE JATUH BACKGROUND */
+    .heart-falling {
+        position: absolute;
+        animation: fall linear infinite;
+        z-index: 1;
+    }
+
+    @keyframes fall {
+        0% { transform: translateY(-10vh); opacity: 1; }
+        100% { transform: translateY(110vh); opacity: 0; }
+    }
+
+    /* STIKER */
+    .sticker {
+        position: absolute;
+        bottom: 40px;
+        width: 150px;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.8s ease;
+        z-index: 2;
+    }
+
+    .sticker.show { opacity: 1; transform: scale(1); }
+    .left { left: 40px; }
+    .right { right: 40px; }
+
+    /* TRANSISI KERTAS */
+    .paper-transition {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .paper {
+        position: absolute;
+        width: 50%;
+        height: 100%;
+        background: white;
+    }
+
+    .paper.left { left: -50%; }
+    .paper.right { right: -50%; }
+
+    .paper-transition.active .left { animation: paperLeft 0.7s ease; }
+    .paper-transition.active .right { animation: paperRight 0.7s ease; }
+
+    @keyframes paperLeft {
+        0% { left: -50%; }
+        50% { left: 0; }
+        100% { left: -50%; }
+    }
+
+    @keyframes paperRight {
+        0% { right: -50%; }
+        50% { right: 0; }
+        100% { right: -50%; }
+    }
+
+    /* KANVAS KODE 2 */
+    canvas {
+        display: none;
+        position: fixed; 
+        top: 0;
+        left: 0;
+        z-index: 5; 
+    }
+
+    /* STIKER DI ATAS KANVAS */
+    .sticker-container {
+        display: none; 
+        position: absolute; 
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); 
+        z-index: 10; 
+        width: 150px; 
+        height: auto;
+    }
+
+    .sticker-container img {
+        width: 100%; 
+        height: auto; 
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container" id="mainContainer">
+    <h1 id="title">❤️ Hellowww my cloveee ❤️</h1>
+
+    <div class="love-draw" id="loveDraw">
+        <svg viewBox="-120 -120 750 750">
+            <path id="heartPath" d="
+            M471.7 73.1c-54.5-46.4-136-38.7-186.4 13.7L256 115.6l-29.3-28.8
+            c-50.4-52.4-131.9-60.1-186.4-13.7C-27.3 128.3-10.6 230.8
+            43 284.3l193.5 199.8c10.6 10.9 27.8 10.9 38.4 0L468.4 284.3
+            c53.2-53.5 69.9-156 3.3-211.2z"/>
+        </svg>
+    </div>
+
+    <p id="text">Klik tombol di bawah ini...</p>
+
+    <button onclick="showLove()">Klik di sini</button>
+</div>
+
+<img src="pentol.gif" class="sticker left" id="stickerLeft">
+<img src="pentol.gif" class="sticker right" id="stickerRight">
+
+<div class="paper-transition" id="paperTransition">
+    <div class="paper left"></div>
+    <div class="paper right"></div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div class="sticker-container" id="stickerContainer">
+    <img src="she.webp" alt="WhatsApp Sticker">
+</div>
+
+<audio id="bgMusic" loop preload="auto">
+    <source src="myheart.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+    /* Kumpulan Teks Panjang */
+    let messages = [
+        "Bagaimana kabarnya clove kuu, semoga kamu selalu bahagiaa yaa",
+        "Aku ingin mengatakan sesuatu kepadamu...",
+        "Sejak aku mengenal kamu, hariku terasa lebih indah",
+        "hingga saat ini aku masih mengingat kenangan tentang semua yang pernah kita jalanin dari awal kita bertemu sampai kita berpisah",
+        "dari kita bermain bareng",
+        "Saling sharing tentang apa yang kita alamin",
+        "Membuatt apii, share video tiktok, terutama share video kebangkitan king MU hehehe",
+        "Call an... mendengar suara indah kamu, mendengarr ceritaa kamuu, apapunn ituu, akuu senangg mendengarrnyaa",
+        "apapunn yang kamuu sukaaa akuu jugaa sukaa, mau dari makanannn mu, warnaa pinkk muu, hewan kesukaan kamu kucing mu gwenn,game kamu, dll apapunn ituu tanpa terkecuali .",
+        "Aku senang ngelewatinn hari-hari ituu dengann kamuu, walau singkatt tapii masihh berbekas yang tersimpan dalam memoryy aku. aku senang dan gak akan aku lupakan",
+        "Dan ketika kita perpisahh, aku selalu memikirkan kamuu",
+        "Selalu memikirkan apakah kita bisa bersama seperti dulu lagii",
+        "Hingga kerinduan ini menumpuk dan ku harap semesta mengetauhi itu",
+        "Aku betul betul kangenn banget dengan suara kamu, setidaknya mengechat dan melihat pesan masuk dari mu itu sudah cukup bagi ku. namun itu gak bisa aku lakuin karena kamu sudah ada yang milikin",
+        "Sehingga aku berpikir bagaimana caranya aku bisaa menyampaikan pesan rindu aku kekamuu",
+        "Dan yaa aku punya ide yaitu lewat music, tapi menurut aku jika hanya suaranya saja itu seperti biasa saja, jika ditambahkan dengan video teks lyric di spotify menurut aku itu sudah ramai pakai cara itu",
+        "jadi aku punya ide lagi dengan cara menggunakan codingan, aku pelajarin bagaimana dasar dan struktur codingan sehingga aku bisa membuat teks lirik lagu untuk nyampaikan pesan rindu aku, walaupun belum bagus banget tapi bagi aku itu sudah cukup dan sedikit orang yang menggunakan ide itu",
+        "Aku berharapp kerinduan aku sampai dikamuu, dan aku berharap kita bisa bersama lagii",
+        "Aku benar-benar menyayangimu bilqiss ❤️ apakah kita bisa sepertii dulu lagii?",
+        "Kamuu sehat-sehatt yaa, bahagiaa teruss, jangan ada rasa kesedihann, pokoknyaa aku mau terbaikk buatt kamuu",
+        "❤️ babaiii clovee kuu ❤️"
+    ];
+
+    let index = 0;
+    let typing = false;
+    let isStage2 = false;
+
+    // Transisi Kertas
+    function paperTransition(){
+        const trans = document.getElementById("paperTransition");
+        trans.classList.add("active");
+        setTimeout(()=>{
+            trans.classList.remove("active");
+        }, 700);
+    }
+
+    // Efek Mengetik
+    function typeWriter(text, element, speed = 40){
+        let i = 0;
+        element.innerHTML = "";
+        function typingEffect(){
+            if(i < text.length){
+                element.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(typingEffect, speed);
+            } else {
+                typing = false; 
+            }
+        }
+        typingEffect();
+    }
+
+    // Fungsi Klik Tombol 
+    function showLove(){
+        if(typing) return;
+
+        // Hanya mainkan musik & efek fade-in JIKA INI KLIK PERTAMA
+        if (index === 0) {
+            const music = document.getElementById("bgMusic");
+            music.muted = false; 
+            music.volume = 0; 
+            
+            let playPromise = music.play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    let fadeAudio = setInterval(() => {
+                        if (music.volume < 0.6) {
+                            music.volume = Math.min(0.6, music.volume + 0.05);
+                        } else {
+                            clearInterval(fadeAudio);
+                        }
+                    }, 250); 
+                })
+                .catch(error => {
+                    console.error("Error memutar lagu:", error);
+                    alert("Musik gagal diputar! Pastikan file 'myheart.mp3' ada di folder yang sama persis.");
+                });
+            }
+        }
+
+        typing = true; 
+        
+        // Jika teks sudah habis, jalankan animasi akhir (Kanvas)
+        if(index >= messages.length) {
+            if (!isStage2) {
+                isStage2 = true;
+                paperTransition();
+                setTimeout(() => {
+                    startCanvasAnimation();
+                }, 350);
+            }
+            return;
+        }
+
+        paperTransition();
+
+        document.getElementById("title").style.display = "none";
+        document.getElementById("stickerLeft").classList.add("show");
+        document.getElementById("stickerRight").classList.add("show");
+
+        const textElement = document.getElementById("text");
+
+        setTimeout(()=>{
+            typeWriter(messages[index], textElement);
+            index++;
+        }, 300);
+    }
+
+    /* Animasi Background Love Jatuh */
+    function createFallingHeart(){
+        const heart = document.createElement("div");
+        heart.classList.add("heart-falling");
+        heart.innerHTML = "❤️";
+        heart.style.left = Math.random() * 100 + "vw";
+        heart.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        heart.style.fontSize = (Math.random() * 25 + 15) + "px";
+        document.body.appendChild(heart);
+
+        setTimeout(()=>{
+            heart.remove();
+        }, 5000)
+    }
+
+    let fallingHeartInterval = setInterval(createFallingHeart, 300);
+
+    /* Refresh GIF Pentol */
+    const gifLeft = document.getElementById("stickerLeft");
+    const gifRight = document.getElementById("stickerRight");
+
+    setInterval(() => {
+        let src1 = gifLeft.src;
+        gifLeft.src = "";
+        gifLeft.src = src1;
+
+        let src2 = gifRight.src;
+        gifRight.src = "";
+        gifRight.src = src2;
+    }, 4000);
+
+    /* =========================================
+       ANIMASI KANVAS (TAHAP AKHIR)
+       ========================================= */
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let bubbles = [], explosions = [], sparkles = [], orbits = [];
+
+    class Bubble{
+        constructor(x,y,tx,ty){
+            this.x=x; this.y=y;
+            this.tx=tx; this.ty=ty;
+            this.size=Math.random()*12+10;
+            this.speed=0.04;
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+            ctx.fillStyle="pink";
+            ctx.fill();
+        }
+        update(){
+            this.x+=(this.tx-this.x)*this.speed;
+            this.y+=(this.ty-this.y)*this.speed;
+        }
+    }
+
+    class Sparkle{
+        constructor(){
+            this.x=Math.random()*canvas.width;
+            this.y=Math.random()*canvas.height;
+            this.size=Math.random()*2+1;
+            this.alpha=Math.random();
+            this.speed=Math.random()*0.02;
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+            ctx.fillStyle="rgba(255,180,255,"+this.alpha+")";
+            ctx.fill();
+        }
+        update(){
+            this.alpha+=this.speed;
+            if(this.alpha>1 || this.alpha<0) this.speed*=-1;
+        }
+    }
+
+    class Orbit{
+        constructor(){
+            this.angle=Math.random()*Math.PI*2;
+            this.radius=200+Math.random()*120;
+            this.speed=0.01+Math.random()*0.01;
+            this.size=4+Math.random()*4;
+        }
+        draw(){
+            let x=canvas.width/2 + Math.cos(this.angle)*this.radius;
+            let y=canvas.height/2 + Math.sin(this.angle)*this.radius;
+            ctx.beginPath();
+            ctx.arc(x,y,this.size,0,Math.PI*2);
+            ctx.fillStyle="hotpink";
+            ctx.fill();
+        }
+        update(){ this.angle+=this.speed; }
+    }
+
+    class Explosion{
+        constructor(x,y){
+            this.x=x; this.y=y;
+            this.size=Math.random()*15+10;
+            this.vx=(Math.random()-0.5)*14;
+            this.vy=(Math.random()-0.5)*14;
+            this.life=120;
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+            ctx.fillStyle="hotpink";
+            ctx.fill();
+        }
+        update(){
+            this.x+=this.vx; this.y+=this.vy;
+            this.vy+=0.2; this.life--;
+        }
+    }
+
+    function createCanvasHeart(){
+        bubbles = []; 
+        for(let x=-1.5;x<1.5;x+=0.05){
+            for(let y=-1.5;y<1.5;y+=0.05){
+                let formula=Math.pow(x*x+y*y-1,3)-x*x*y*y*y;
+                if(formula<=0){
+                    let px=x*250+canvas.width/2;
+                    let py=-y*250+canvas.height/2;
+                    let sx=Math.random()*canvas.width;
+                    let sy=Math.random()*canvas.height;
+                    bubbles.push(new Bubble(sx,sy,px,py));
+                }
+            }
+        }
+    }
+
+    function createSparkles(){
+        sparkles = []; 
+        for(let i=0;i<120;i++) sparkles.push(new Sparkle());
+    }
+
+    function createOrbit(){
+        orbits = []; 
+        for(let i=0;i<25;i++) orbits.push(new Orbit());
+    }
+
+    canvas.addEventListener("click",(e)=>{
+        if(!isStage2) return;
+        for(let i=0;i<100;i++) explosions.push(new Explosion(e.clientX,e.clientY)); 
+    });
+
+    function animate(){
+        ctx.fillStyle="rgba(0,0,0,0.25)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        sparkles.forEach(s=>{ s.update(); s.draw(); });
+        orbits.forEach(o=>{ o.update(); o.draw(); });
+        bubbles.forEach(b=>{ b.update(); b.draw(); });
+
+        explosions.forEach((ex,i)=>{
+            ex.update(); ex.draw();
+            if(ex.life<=0) explosions.splice(i,1);
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    // Fungsi transisi ke layar hitam animasi + Klimaks Musik
+    function startCanvasAnimation() {
+        clearInterval(fallingHeartInterval);
+        document.querySelectorAll('.heart-falling').forEach(h => h.remove());
+
+        document.getElementById("mainContainer").style.display = "none";
+        document.getElementById("stickerLeft").style.display = "none";
+        document.getElementById("stickerRight").style.display = "none";
+        
+        document.body.style.background = "#0b0b0f";
+        canvas.style.display = "block";
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // MENAMPILKAN KONTAINER STIKER
+        document.getElementById("stickerContainer").style.display = "block";
+
+        createCanvasHeart();
+        createSparkles();
+        createOrbit();
+        animate();
+
+        // Efek Fade-In Klimaks (Naik perlahan ke 100%)
+        const music = document.getElementById("bgMusic");
+        let climaxAudio = setInterval(() => {
+            if (music.volume < 1.0) {
+                music.volume = Math.min(1.0, music.volume + 0.05);
+            } else {
+                clearInterval(climaxAudio);
+            }
+        }, 200);
+    }
+
+    window.addEventListener('resize', () => {
+        if(isStage2) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            createCanvasHeart();
+            createSparkles();
+            createOrbit();
+        }
+    });
+
+</script>
+</body>
+</html>
